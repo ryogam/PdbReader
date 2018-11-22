@@ -85,7 +85,7 @@ class PdbReader():
     def file_changer(self):
         count = -1
         f = open(self.pdb_file, "r")
-        new_file = open(self.file_name + '_from_conter' + self.file_ext, 'w')
+        new_file = open(self.file_name + '_from_center' + self.file_ext, 'w')
         if self.model_num == None:
             for line in f:
                 if line.startswith("ATOM"):

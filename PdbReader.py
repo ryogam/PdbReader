@@ -30,7 +30,7 @@ class PdbReader():
 
                 elif line.startswith("ENDMDL"):
                     all_model_list.append(each_model_list)
-            MODEL = all_model_list[model_num - 1]
+            MODEL = all_model_list[int(self.model_num) - 1]
             f.close()
         self.MODEL = MODEL
         return(MODEL, all_model_list)

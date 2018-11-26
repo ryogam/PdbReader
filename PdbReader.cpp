@@ -5,20 +5,29 @@
 #include <cstdlib>
 #include <vector>
 #include <sstream>
+#include <boost/algorithm/string.hpp>
 using namespace std;
 
 class PdbReader
 {
+private:
     string filename;
+    int model_num;
 public:
-    PdbReader(string s);
+    vector<string> MODEL;
+    PdbReader(string, int);
     int fileread();
-    int atomout();
+    int movecenter();
+    int file_changer(string additional_name);
 };
 
-PdbReader::PdbReader(string s) : filename(s){}
+PdbReader::PdbReader(string s, int num = -1){
+    filename = s;
+    model_num = num;
 
+}
 int PdbReader::fileread(){
+    cout << filename << endl;
     std::ifstream ifs(filename);
     if (!ifs) {
         cerr << "Can't open file" << endl;
@@ -27,29 +36,42 @@ int PdbReader::fileread(){
     string line;
     vector< vector<string> > all_list;
     vector<std::string> each_list;
-    while (std::getline(ifs, line)){
-        if (line.substr(0, 5) == "MODEL"){
-            all_list.push_back(each_list);
-            each_list.clear();
-            string model_name;
-            model_name = line;
-            std::cout << model_name << std::endl;
-            each_list.push_back(model_name);
-        }
-        else if (line.substr(0, 4) == "ATOM"){
-            istringstream iss(line);
-            string s;
-            while (iss >> s) {
-                each_list.push_back(s);
+    if (model_num == -1){
+        while (std::getline(ifs, line)){
+            if (line.substr(0, 5) == "MODEL"){
+                each_list.push_back(line);
             }
         }
+        MODEL = each_list;
+    }
+
+    else{
+        while (std::getline(ifs, line)){
+            if (line.substr(0, 5) == "MODEL"){
+                each_list.clear();
+            }
+            else if(line.substr(0, 4) == "ATOM"){
+                each_list.push_back(line);
+            }
+            else if(line.substr(0, 6) == "ENDMDL"){
+                all_list.push_back(each_list);
+            }
+        }
+        MODEL = all_list[model_num - 1];
     }
     return 0;
 }
 
+int PdbReader::movecenter(){
+    for(string line : MODEL){
+        float x, y, z;
+        std::vector<std::string> strs;
+        boost::split(strs, line, boost::is_space(), boost::algorithm::token_compress_on);
+        // strs is splitted_list of a line by spaces
+    }
+}
 
-int main()
-{
-    PdbReader a("2DX3.pdb");
+int main(){
+    PdbReader a("2DX3.pdb", 4);
     a.fileread();
 }

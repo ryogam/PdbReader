@@ -117,3 +117,16 @@ class PdbReader():
                 new_file.write(new_line)
         f.close()
         new_file.close()
+
+# Rotate PdbClass1 matrix to Pdbclass2 and output the rotated matrix to an file.
+def Rotate(PdbReaderClass1, PdbReaderClass2):
+    D = []
+    for i in [0, 1, 2]:
+        for j in [0, 1,2 ]:
+            D.append(np.sum(PdbReaderClass1.q_matrix_from_center[:, i] * PdbReaderClass2.q_matrix_from_center[:, j]))
+    D = np.array(D)
+    D_matrix = D.reshape(3, 3)
+    U, S, V = np.linalg.svd(D_matrix, full_matrices=False)
+    R = np.dot(U, V)
+    Rotated = np.dot(PdbReaderClass1.q_matrix_from_center, R)
+    PdbReaderClass1.file_changer(Rotated, "_rotated")

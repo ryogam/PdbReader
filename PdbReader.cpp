@@ -19,7 +19,6 @@ public:
     PdbReader(string, int);
     int fileread();
     MatrixXd get_matrix(int, int);
-    int file_changer(string additional_name);
 };
 
 PdbReader::PdbReader(string s, int num = -1){
@@ -27,7 +26,6 @@ PdbReader::PdbReader(string s, int num = -1){
     model_num = num;
 }
 int PdbReader::fileread(){
-    cout << filename << endl;
     std::ifstream ifs(filename);
     if (!ifs) {
         cerr << "Can't open file" << endl;
@@ -38,7 +36,7 @@ int PdbReader::fileread(){
     vector<std::string> each_list;
     if (model_num == -1){
         while (std::getline(ifs, line)){
-            if (line.substr(0, 5) == "MODEL"){
+            if (line.substr(0, 4) == "ATOM"){
                 each_list.push_back(line);
             }
         }
@@ -107,16 +105,81 @@ MatrixXd PdbReader::get_matrix(int x_start_col, int element_col){
     }
     RowVector3d c;
     MatrixXd Q_from_center(N, 3);
-    c << M.col(0).sum()/weight_sum, M.col(1).sum()/weight_sum, 
+    c << M.col(0).sum()/weight_sum, M.col(1).sum()/weight_sum,
     M.col(2).sum()/weight_sum;
     Q_from_center = Q.rowwise() - c;
     return Q_from_center;
 }
 
+MatrixXd Rotate(MatrixXd Q1, MatrixXd Q2){
+    std::vector<int> v{0, 1, 2};
+    std::vector<double> D;
+    MatrixXd R(3, 3);
+    for (auto &i:v){
+        for (auto &j:v){
+            D.push_back((Q1.array().col(i) * Q2.array().col(j)).sum());
+        }
+    }
+    VectorXd D2 = VectorXd::Map(D.data(), D.size());
+    MatrixXd D_matrix = MatrixXd::Map(D2.data(), 3, 3);
+    Eigen::JacobiSVD<MatrixXd> svd(D_matrix.transpose(), ComputeThinU | ComputeThinV);
+    cout << svd.matrixU() * svd.matrixV().transpose() << endl;
+    R = svd.matrixU() * svd.matrixV().transpose();
+    return R;
+}
+// void file_changer(string input_file, int model_num = -1 ,
+//                     MatrixXd, string additional_name){
+//     std::ifstream ifs(input_file);
+//     if (!ifs) {
+//         cerr << "Can't open file" << endl;
+//         return -1;
+//     }
+//     string line;
+//     vector< vector<string> > all_list;
+//     vector<std::string> each_list;
+//     int count = -1;
+//     if (model_num == -1){
+//         while (std::getline(ifs, line)){
+//             count += 1
+//             if (line.substr(0, 4) == "ATOM"){
+
+//             }
+//         }
+//         MODEL = each_list;
+//     }
+
+//     else{
+//         while (std::getline(ifs, line)){
+//             if (line.substr(0, 5) == "MODEL"){
+//                 each_list.clear();
+//             }
+//             else if(line.substr(0, 4) == "ATOM"){
+//                 each_list.push_back(line);
+//             }
+//             else if(line.substr(0, 6) == "ENDMDL"){
+//                 all_list.push_back(each_list);
+//             }
+//         }
+//         MODEL = all_list[model_num - 1];
+//     }
+//     return 0;
+
 int main(){
     MatrixXd Q1_from_center;
-    PdbReader Reader1("2DX3.pdb", 4);
+    PdbReader Reader1("./Wild1_315K_1.pdb");
     Reader1.fileread();
-    Q1_from_center = Reader1.get_matrix(7, 12);
-    cout << Eigen::JacobiSVD(Q1_from_center) << endl;
-}
+    Q1_from_center = Reader1.get_matrix(6, 11);
+    MatrixXd Q2_from_center;
+    PdbReader Reader2("./Wild1_315K_2.pdb");
+    Reader2.fileread();
+    Q2_from_center = Reader2.get_matrix(6, 11);
+    MatrixXd R(3, 3);
+    R = Rotate(Q1_from_center, Q2_from_center);
+    }
+
+//     MatrixXd Q2_from_center;
+//     PdbReader Reader2("Wild1_315K_2.pdb", -1);
+//     Reader2.fileread();
+//     Q2_from_center = Reader2.get_matrix(6, 11);
+//     // Eigen::JacobiSVD
+// }
